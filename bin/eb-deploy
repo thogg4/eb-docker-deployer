@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'deploy'
+require 'eb_deploy'
 
-Deploy.start(ARGV)
+EbDeploy.start(ARGV)
