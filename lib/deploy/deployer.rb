@@ -20,8 +20,15 @@ module Deploy
       command = "docker build -t #{repo}:#{version} ."
       system(command)
 
-      shout 'Tagging Docker Image'
+      shout 'Tagging Latest Docker Image'
       command = "docker tag -f #{repo}:#{version} #{repo}:latest"
+      system(command)
+
+      shout "Pushing Docker Image: #{repo}:#{version}"
+      command = "docker push #{repo}:#{version}"
+      system(command)
+      shout "Pushing Docker Image: #{repo}:latest"
+      command = "docker push #{repo}:latest"
       system(command)
 
       #command = "eb deploy -l #{version}"
