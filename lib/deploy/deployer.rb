@@ -16,11 +16,11 @@ module Deploy
       version = options[:version]
       repo = ENV['DOCKER_REPO']
       
-      shout 'Building Docker Image'
+      shout "Building Docker Image: #{repo}:#{version}"
       command = "docker build -t #{repo}:#{version} ."
       system(command)
 
-      shout 'Tagging Latest Docker Image'
+      shout "Tagging #{version} Docker Image"
       command = "docker tag -f #{repo}:#{version} #{repo}:latest"
       system(command)
 
@@ -31,8 +31,26 @@ module Deploy
       command = "docker push #{repo}:latest"
       system(command)
 
-      #command = "eb deploy -l #{version}"
-      #system(command)
+      command = "eb deploy --label #{version}"
+      system(command)
+    end
+
+    method_option :version, aliases: '-v', desc: 'Version'
+    desc 'rollback', 'rollback'
+    def rollback
+      version = options[:version]
+      repo = ENV['DOCKER_REPO']
+
+      shout "Tagging #{version} Docker Image"
+      command = "docker tag -f #{repo}:#{version} #{repo}:latest"
+      system(command)
+
+      shout "Pushing Docker Image: #{repo}:latest"
+      command = "docker push #{repo}:latest"
+      system(command)
+
+      command = "eb deploy --version #{version}"
+      system(command)
     end
 
     no_commands do
