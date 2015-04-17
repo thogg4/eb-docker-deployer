@@ -2,8 +2,11 @@ module Deploy
   class Deployer < Thor
     include Deploy::Output
 
-    desc 'setup eb', 'setup eb'
+    desc 'setup config', 'setup config'
     def setup
+      
+      raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('~/.aws/config')
+
       command = "eb init"
       system(command)
     end
@@ -16,23 +19,14 @@ module Deploy
       version = options[:version]
       repo = ENV['DOCKER_REPO']
       
-      shout "Building Docker Image: #{repo}:#{version}"
-      command = "docker build -t #{repo}:#{version} ."
-      system(command)
+      build_image(repo, version)
 
-      shout "Tagging #{version} Docker Image"
-      command = "docker tag -f #{repo}:#{version} #{repo}:latest"
-      system(command)
+      tag_image_as_latest(repo, version)
 
-      shout "Pushing Docker Image: #{repo}:#{version}"
-      command = "docker push #{repo}:#{version}"
-      system(command)
-      shout "Pushing Docker Image: #{repo}:latest"
-      command = "docker push #{repo}:latest"
-      system(command)
+      push_image(repo, version)
+      push_image(repo, 'latest')
 
-      command = "eb deploy --label #{version}"
-      system(command)
+      run_deploy(version)
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
@@ -41,25 +35,44 @@ module Deploy
       version = options[:version]
       repo = ENV['DOCKER_REPO']
 
-      shout "Tagging #{version} Docker Image"
-      command = "docker tag -f #{repo}:#{version} #{repo}:latest"
-      system(command)
+      tag_image_as_latest(repo, version)
 
-      shout "Pushing Docker Image: #{repo}:latest"
-      command = "docker push #{repo}:latest"
-      system(command)
+      push_image(repo, 'latest')
 
-      command = "eb deploy --version #{version}"
-      system(command)
+      run_deploy(version)
     end
 
     no_commands do
+
+      def build_image(repo, tag)
+        shout "Building Docker Image: #{repo}:#{tag}"
+        command = "docker build -t #{repo}:#{tag} ."
+        system(command)
+      end
+
+      def tag_image_as_latest(repo, tag)
+        shout "Tagging #{tag} Docker Image as Latest"
+        command = "docker tag -f #{repo}:#{tag} #{repo}:latest"
+        system(command)
+      end
+
+      def push_image(repo, tag)
+        shout "Pushing Docker Image: #{repo}:#{tag}"
+        command = "docker push #{repo}:#{tag}"
+        system(command)
+      end
+
+      def run_deploy(version)
+        command = "eb deploy --label #{version}"
+        system(command)
+      end
 
       def check_setup
         raise StandardError, 'docker not installed' unless command?('docker')
         raise StandardError, 'eb command not installed' unless command?('eb')
         raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('.elasticbeanstalk')
-        raise StandardError, 'Env DOCKER_REPO not set' unless ENV['DOCKER_REPO']
+        raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('~/.aws/config')
+        raise StandardError, 'ENV DOCKER_REPO not set' unless ENV['DOCKER_REPO']
       end
 
       def command?(command)
