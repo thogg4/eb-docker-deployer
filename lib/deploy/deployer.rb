@@ -4,10 +4,7 @@ module Deploy
 
     desc 'setup config', 'setup config'
     def setup
-      
-      raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('~/.aws/config')
-
-      command = "eb init"
+      command = 'eb init'
       system(command)
     end
 
@@ -27,6 +24,8 @@ module Deploy
       push_image(repo, 'latest')
 
       run_deploy(version)
+
+      save_version(version)
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
@@ -40,6 +39,8 @@ module Deploy
       push_image(repo, 'latest')
 
       run_deploy(version)
+
+      save_version(version)
     end
 
     no_commands do
@@ -67,12 +68,20 @@ module Deploy
         system(command)
       end
 
+      def save_version(version)
+        config_file['current_version'] = version
+      end
+
+      def config_file
+        UserConfig.new('.eb-deploy')['versions']
+      end
+
       def check_setup
-        raise StandardError, 'docker not installed' unless command?('docker')
-        raise StandardError, 'eb command not installed' unless command?('eb')
-        raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('.elasticbeanstalk')
-        raise StandardError, 'elasticbeanstalk not configured' unless File.exist?('~/.aws/config')
-        raise StandardError, 'ENV DOCKER_REPO not set' unless ENV['DOCKER_REPO']
+        (shout('docker not installed'); return false) unless command?('docker')
+        (shout('eb command not installed'); return false) unless command?('eb')
+        (shout('elasticbeanstalk not configured. run setup command'); return false) unless File.exist?('.elasticbeanstalk')
+        (shout('aws not configured. run setup command'); return false) unless File.exist?('~/.aws/config')
+        (shout('ENV DOCKER_REPO not set'); return false) unless ENV['DOCKER_REPO']
       end
 
       def command?(command)
