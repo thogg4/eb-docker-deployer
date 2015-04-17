@@ -80,7 +80,7 @@ module Deploy
         (shout('docker not installed'); return false) unless command?('docker')
         (shout('eb command not installed'); return false) unless command?('eb')
         (shout('elasticbeanstalk not configured. run setup command'); return false) unless File.exist?('.elasticbeanstalk')
-        (shout('aws not configured. run setup command'); return false) unless File.exist?('~/.aws/config')
+        (shout('aws not configured. run setup command'); return false) unless File.exist?(File.expand_path('~/.aws/config'))
         (shout('ENV DOCKER_REPO not set'); return false) unless ENV['DOCKER_REPO']
       end
 
