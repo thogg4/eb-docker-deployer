@@ -1,5 +1,5 @@
 require 'thor'
-require 'user_config'
+require 'highline/import'
 
 require 'deploy/output'
 

@@ -4,8 +4,17 @@ module Deploy
 
     desc 'setup config', 'setup config'
     def setup
-      command = 'eb init'
-      system(command)
+      (shout('AWS creds already configured at ~/.aws/config.'); exit(1)) if File.exist?(File.expand_path('~/.aws/config'))
+
+      key = ask('Enter AWS Key:')
+      secret = ask('Enter AWS Secret:')
+
+      File.open(File.expand_path('~/.aws/config'), 'w') do |f|
+        f.puts '[eb-cli]'
+        f.puts "aws_access_key_id = #{key}"
+        f.puts "aws_secret_access_key = #{secret}"
+      end
+      (shout('AWS creds successfully configured at ~/.aws/config.'); exit(0)) if File.exist?(File.expand_path('~/.aws/config'))
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
@@ -69,6 +78,7 @@ module Deploy
       end
 
       def run_deploy(version)
+        shout "Deploying #{version} to elastic beanstalk"
         command = "eb deploy --label #{version}"
         exit(1) unless system(command)
       end
@@ -77,15 +87,15 @@ module Deploy
         #config_file['current_version'] = version
       end
 
-      def config_file
+      def aws_config_file
         #UserConfig.new('.eb-deploy')['versions']
       end
 
       def check_setup
         (shout('docker not installed'); exit(1)) unless command?('docker')
         (shout('eb command not installed'); exit(1)) unless command?('eb')
-        (shout('elasticbeanstalk not configured. run setup command'); exit(1)) unless File.exist?('.elasticbeanstalk')
-        (shout('aws credentials not configured.'); exit(1)) unless File.exist?(File.expand_path('~/.aws/config'))
+        (shout('elasticbeanstalk not configured for this project. run "eb init".'); exit(1)) unless File.exist?('.elasticbeanstalk')
+        (shout('AWS credentials not configured.'); exit(1)) unless File.exist?(File.expand_path('~/.aws/config'))
         (shout('ENV DOCKER_REPO not set'); exit(1)) unless ENV['DOCKER_REPO']
       end
 
