@@ -33,15 +33,19 @@ module Deploy
       repo = ENV['DOCKER_REPO']
       
       if build
+        notifier('', { color: '#6080C0', title: "Deployment started with build", text: "Deploying version #{version}" })
         build_image(repo, version)
 
         tag_image_as_latest(repo, version)
 
         push_image(repo, version)
         push_image(repo, 'latest')
+      else
+        notifier('', { color: '#6080C0', title: "Deployment started without build", text: "Deploying version #{version}" })
       end
 
       run_deploy(version)
+      notifier('', { color: 'good', title: 'Deployment Succeeded!!', text: "The new version is #{version}" })
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
@@ -59,7 +63,23 @@ module Deploy
       run_deploy(version)
     end
 
+    desc 'send test notification', 'send test notification'
+    def test_slack
+      notifier('', { color: 'good', title: 'This is a test notification from eb-docker-deploy.' })
+    end
+
     no_commands do
+
+      def notifier(message, attachments)
+        if ENV['SLACK_WEBHOOK']
+          @notifier ||= Slack::Notifier.new(ENV['SLACK_WEBHOOK'])
+          @notifier.ping(message, {
+            attachments: [attachments]
+          })
+        else
+          shout 'You can send deployment notifications if you set the SLACK_WEBHOOK environment variable.'
+        end
+      end
 
       def build_image(repo, tag)
         shout "Building Docker Image: #{repo}:#{tag}"
@@ -83,14 +103,6 @@ module Deploy
         shout "Deploying #{version} to elastic beanstalk"
         command = "eb deploy --label #{version}"
         exit(1) unless system(command)
-      end
-
-      def save_version(version)
-        #config_file['current_version'] = version
-      end
-
-      def aws_config_file
-        #UserConfig.new('.eb-deploy')['versions']
       end
 
       def check_setup
