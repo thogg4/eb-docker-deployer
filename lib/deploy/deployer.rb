@@ -9,6 +9,8 @@ module Deploy
       key = ask('Enter AWS Key:')
       secret = ask('Enter AWS Secret:')
 
+      Dir.mkdir(File.expand_path('~/.aws'))
+
       File.open(File.expand_path('~/.aws/config'), 'w') do |f|
         f.puts '[eb-cli]'
         f.puts "aws_access_key_id = #{key}"
