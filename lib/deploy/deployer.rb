@@ -45,22 +45,29 @@ module Deploy
       end
 
       run_deploy(version)
-      notifier('', { color: 'good', title: 'Deployment Succeeded!!', text: "The new version is #{version}" })
+      notifier('', { color: 'good', title: 'Deployment Succeeded!!', text: "The current version is #{version}" })
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
     desc 'rollback', 'rollback'
     def rollback
+      check_setup
+
       version = options[:version]
       (shout('You must pass a version with -v'); exit(1)) unless version
 
       repo = ENV['DOCKER_REPO']
 
+      notifier('', { color: '#6080C0', title: "Rollback started", text: "Rolling back to version #{version}" })
+
+      pull_image(repo, version)
+
       tag_image_as_latest(repo, version)
 
       push_image(repo, 'latest')
 
-      run_deploy(version)
+      run_rollback(version)
+      notifier('', { color: 'good', title: 'Rollback Succeeded!!', text: "The current version is #{version}" })
     end
 
     desc 'send test notification', 'send test notification'
@@ -99,9 +106,21 @@ module Deploy
         exit(1) unless system(command)
       end
 
+      def pull_image(repo, tag)
+        shout "Pulling Docker Image: #{repo}:#{tag}"
+        command = "docker pull #{repo}:#{tag}"
+        exit(1) unless system(command)
+      end
+
       def run_deploy(version)
-        shout "Deploying #{version} to elastic beanstalk"
+        shout "deploying #{version} to elastic beanstalk"
         command = "eb deploy --label #{version}"
+        exit(1) unless system(command)
+      end
+
+      def run_rollback(version)
+        shout "deploying #{version} to elastic beanstalk"
+        command = "eb deploy --version #{version}"
         exit(1) unless system(command)
       end
 
