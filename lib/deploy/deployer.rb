@@ -16,24 +16,26 @@ module Deploy
         f.puts "aws_access_key_id = #{key}"
         f.puts "aws_secret_access_key = #{secret}"
       end
-      (shout('AWS creds successfully configured at ~/.aws/config.'); exit(0)) if File.exist?(File.expand_path('~/.aws/config'))
+      shout('AWS creds successfully configured at ~/.aws/config.') if File.exist?(File.expand_path('~/.aws/config'))
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
+    method_option :environment, aliases: '-e', desc: 'Environment'
     method_option :build, aliases: '-b', desc: 'Build Image'
     desc 'deploy', 'deploy'
     def deploy
       check_setup
 
+      environment = options[:environment]
       build = options[:build]
 
       version = options[:version]
       (shout('You must pass a version with -v'); exit(1)) unless version
 
       repo = ENV['DOCKER_REPO']
-      
+
       if build
-        notifier('', { color: '#6080C0', title: "Deployment started with build", text: "Deploying version #{version}" })
+        announce({ color: '#6080C0', title: "Deployment started with build", text: "Deploying version #{version} to #{environment || 'stage'}" })
         build_image(repo, version)
 
         tag_image_as_latest(repo, version)
@@ -41,24 +43,26 @@ module Deploy
         push_image(repo, version)
         push_image(repo, 'latest')
       else
-        notifier('', { color: '#6080C0', title: "Deployment started without build", text: "Deploying version #{version}" })
+        announce({ color: '#6080C0', title: "Deployment started without build", text: "Deploying version #{version} to #{environment || 'stage'}" })
       end
 
-      run_deploy(version)
-      notifier('', { color: 'good', title: 'Deployment Succeeded!!', text: "The current version is #{version}" })
+      run_deploy(version, environment)
+      announce({ color: 'good', title: 'Deployment Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
     method_option :version, aliases: '-v', desc: 'Version'
+    method_option :environment, aliases: '-e', desc: 'Environment'
     desc 'rollback', 'rollback'
     def rollback
       check_setup
 
+      environment = options[:environment]
       version = options[:version]
       (shout('You must pass a version with -v'); exit(1)) unless version
 
       repo = ENV['DOCKER_REPO']
 
-      notifier('', { color: '#6080C0', title: "Rollback started", text: "Rolling back to version #{version}" })
+      announce({ color: '#6080C0', title: "Rollback started", text: "Rolling back to #{version} on #{environment || 'stage'}" })
 
       pull_image(repo, version)
 
@@ -66,8 +70,8 @@ module Deploy
 
       push_image(repo, 'latest')
 
-      run_rollback(version)
-      notifier('', { color: 'good', title: 'Rollback Succeeded!!', text: "The current version is #{version}" })
+      run_rollback(version, environment)
+      announce({ color: 'good', title: 'Rollback Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
     desc 'send test notification', 'send test notification'
@@ -76,6 +80,11 @@ module Deploy
     end
 
     no_commands do
+
+      def announce(attachments)
+        shout("#{attachments[:title]} - #{attachments[:text]}")
+        notifier('', attachments)
+      end
 
       def notifier(message, attachments)
         if ENV['SLACK_WEBHOOK']
@@ -112,15 +121,15 @@ module Deploy
         exit(1) unless system(command)
       end
 
-      def run_deploy(version)
-        shout "deploying #{version} to elastic beanstalk"
-        command = "eb deploy --label #{version}"
+      def run_deploy(version, environment=nil)
+        command = environment ? "eb deploy #{environment} --label #{version}" : "eb deploy --label #{version}"
+        shout "deploying #{version} to elastic beanstalk with command: #{command}"
         exit(1) unless system(command)
       end
 
-      def run_rollback(version)
-        shout "deploying #{version} to elastic beanstalk"
-        command = "eb deploy --version #{version}"
+      def run_rollback(version, environment=nil)
+        command = environment ? "eb deploy #{environment} --version #{version}" : "eb deploy --version #{version}"
+        shout "deploying #{version} to elastic beanstalk with command: #{command}"
         exit(1) unless system(command)
       end
 
