@@ -30,7 +30,7 @@ module Deploy
       build = options[:build]
 
       version = options[:version]
-      (shout('You must pass a version with -v'); exit(1)) unless version
+      check_version(version)
 
       repo = ENV['DOCKER_REPO']
 
@@ -47,6 +47,7 @@ module Deploy
       end
 
       run_deploy(version, environment)
+      record_version(version)
       announce({ color: 'good', title: 'Deployment Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
@@ -58,7 +59,7 @@ module Deploy
 
       environment = options[:environment]
       version = options[:version]
-      (shout('You must pass a version with -v'); exit(1)) unless version
+      check_rollback_version(version)
 
       repo = ENV['DOCKER_REPO']
 
@@ -71,12 +72,20 @@ module Deploy
       push_image(repo, 'latest')
 
       run_rollback(version, environment)
+      record_version(version)
       announce({ color: 'good', title: 'Rollback Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
     desc 'send test notification', 'send test notification'
     def test_slack
       notifier('', { color: 'good', title: 'This is a test notification from eb-docker-deploy.' })
+    end
+
+    desc 'list versions', 'list versions'
+    def versions
+      versions_array.each do |v|
+        shout v
+      end
     end
 
     no_commands do
@@ -143,6 +152,42 @@ module Deploy
 
       def command?(command)
         system("which #{command} > /dev/null 2>&1")
+      end
+
+      def check_rollback_version(version)
+        check_version(version)
+        (shout('You can only rollback to a previous version'); exit(1)) unless versions_array.include?(version)
+      end
+
+      def check_version(version)
+        (shout('You must pass a version with -v'); exit(1)) unless version
+        (shout('You are currently on that version'); exit(1)) if current_version == version
+      end
+
+      def record_version(version)
+        write_to_versions_file(versions_array.push(version))
+      end
+
+      def current_version
+        versions_array.last
+      end
+
+      def versions_array
+        read_versions_file.read.split
+      end
+
+      def write_to_versions_file(new_array)
+        write_versions_file do |f|
+          new_array.each { |v| f.puts(v) }
+        end
+      end
+
+      def write_versions_file(&block)
+        File.open('.versions', 'w+', &block)
+      end
+
+      def read_versions_file
+        File.open('.versions', 'r')
       end
 
     end
