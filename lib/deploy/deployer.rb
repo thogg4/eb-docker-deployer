@@ -1,6 +1,7 @@
 module Deploy
   class Deployer < Thor
     include Deploy::Output
+    include DockerHubApi
 
     desc 'setup config', 'setup config'
     def setup
@@ -21,20 +22,20 @@ module Deploy
 
     method_option :version, aliases: '-v', desc: 'Version'
     method_option :environment, aliases: '-e', desc: 'Environment'
-    method_option :build, aliases: '-b', desc: 'Build Image'
+    method_option :no_build, aliases: '--no-build', desc: 'Do not Build Image'
     desc 'deploy', 'deploy'
     def deploy
       check_setup
 
       environment = options[:environment]
-      build = options[:build]
+      no_build = options[:no_build]
 
       version = options[:version]
       check_version(version)
 
       repo = ENV['DOCKER_REPO']
 
-      if build
+      if !no_build
         announce({ color: '#6080C0', title: "Deployment started with build", text: "Deploying version #{version} to #{environment || 'stage'}" })
         build_image(repo, version)
 
@@ -47,7 +48,6 @@ module Deploy
       end
 
       run_deploy(version, environment)
-      record_version(version)
       announce({ color: 'good', title: 'Deployment Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
@@ -72,7 +72,6 @@ module Deploy
       push_image(repo, 'latest')
 
       run_rollback(version, environment)
-      record_version(version)
       announce({ color: 'good', title: 'Rollback Succeeded!!', text: "The current version of #{environment || 'stage'} is #{version}" })
     end
 
@@ -164,30 +163,12 @@ module Deploy
         (shout('You are currently on that version'); exit(1)) if current_version == version
       end
 
-      def record_version(version)
-        write_to_versions_file(versions_array.push(version))
-      end
-
       def current_version
         versions_array.last
       end
 
       def versions_array
-        read_versions_file.read.split
-      end
-
-      def write_to_versions_file(new_array)
-        write_versions_file do |f|
-          new_array.each { |v| f.puts(v) }
-        end
-      end
-
-      def write_versions_file(&block)
-        File.open('.versions', 'w+', &block)
-      end
-
-      def read_versions_file
-        File.open('.versions', 'r')
+        get("/v1/repositories/#{ENV['DOCKER_REPO']}/tags").map { |tag| tag['name'] }
       end
 
     end
