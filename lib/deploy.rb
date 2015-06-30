@@ -1,12 +1,15 @@
 require 'thor'
 require 'highline/import'
 require 'slack-notifier'
-require 'rest-client'
+require 'aws-sdk'
 
 require 'deploy/output'
-require 'deploy/docker_hub_api'
+require 'deploy/commands'
+require 'deploy/checks'
+require 'deploy/versions'
+require 'deploy/utility'
 
-require 'deploy/deployer'
+require 'deploy/runner'
 
 module Deploy
 

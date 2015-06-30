@@ -1,14 +1,30 @@
 module Deploy
   module Output
 
+    def announce(attachments)
+      shout("#{attachments[:title]} - #{attachments[:text]}")
+      notifier('', attachments)
+    end
+
+    def notifier(message, attachments)
+      if ENV['SLACK_WEBHOOK']
+        @notifier ||= Slack::Notifier.new(ENV['SLACK_WEBHOOK'])
+        @notifier.ping(message, {
+          attachments: [attachments]
+        })
+      else
+        shout 'You can send deployment notifications if you set the SLACK_WEBHOOK environment variable.'
+      end
+    end
+
     def shout(message)
       message_size = message.size
       if message_size < 77
         # lines are always 80 characters
         stars = '*' * (77 - message_size)
-        puts(green("+ ") + "#{message} #{green(stars)}")
+        puts(red("+ ") + "#{message} #{red(stars)}")
       else
-        puts(green('+ ') + message)
+        puts(red('+ ') + message)
       end
     end
 

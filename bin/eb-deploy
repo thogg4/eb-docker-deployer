@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'deploy'
-
-Deploy::Deployer.start(ARGV)

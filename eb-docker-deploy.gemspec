@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'thor'
   spec.add_dependency 'highline'
 
-  spec.add_dependency 'rest-client'
+  spec.add_dependency 'aws-sdk', '~> 2'
 
   spec.add_dependency 'slack-notifier'
 end
