@@ -22,10 +22,10 @@ module Deploy
       repo = ENV['DOCKER_REPO']
 
       if build && !version_exists?(version)
-        announce({ color: '#6080C0', title: "Deployment started with build", text: "Deploying version #{version} to #{environment}" })
+        announce_title = "Deployment started with build"
         build_image(repo, version)
       else
-        announce({ color: '#6080C0', title: "Deployment started without build", text: "Deploying version #{version} to #{environment}" })
+        announce_title = "Deployment started without build"
         pull_image(repo, version)
       end
 
@@ -34,6 +34,7 @@ module Deploy
       push_image(repo, version)
       push_image(repo, 'latest')
 
+      announce({ color: '#6080C0', title: announce_title, text: "Deploying version #{version} to #{environment}" })
       run_deploy(version, environment)
       announce({ color: 'good', title: 'Deployment Succeeded!!', text: "The current version of #{environment} is #{version}" })
     end
