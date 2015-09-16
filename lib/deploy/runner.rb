@@ -21,6 +21,8 @@ module Deploy
 
       repo = ENV['DOCKER_REPO']
 
+      use_tag_in_dockerrun(repo, version)
+
       if build && !version_exists?(version)
         announce_title = "Deployment started with build"
         build_image(repo, version)
@@ -28,8 +30,6 @@ module Deploy
         announce_title = "Deployment started without build"
         pull_image(repo, version)
       end
-
-      tag_image_as_latest(repo, version)
 
       push_image(repo, version)
       push_image(repo, 'latest')
@@ -52,12 +52,6 @@ module Deploy
       repo = ENV['DOCKER_REPO']
 
       announce({ color: '#6080C0', title: "Rollback started", text: "Rolling back to #{version} on #{environment}" })
-
-      pull_image(repo, version)
-
-      tag_image_as_latest(repo, version)
-
-      push_image(repo, 'latest')
 
       run_rollback(version, environment)
       announce({ color: 'good', title: 'Rollback Succeeded!!', text: "The current version of #{environment} is #{version}" })
