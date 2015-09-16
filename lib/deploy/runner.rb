@@ -21,9 +21,8 @@ module Deploy
 
       repo = ENV['DOCKER_REPO']
 
-      create_deploy_zip_file
-
       use_tag_in_dockerrun(repo, version)
+      create_deploy_zip_file
 
       if build && !version_exists?(version)
         announce_title = "Deployment started with build"
