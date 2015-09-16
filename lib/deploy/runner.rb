@@ -32,7 +32,6 @@ module Deploy
       end
 
       push_image(repo, version)
-      push_image(repo, 'latest')
 
       announce({ color: '#6080C0', title: announce_title, text: "Deploying version #{version} to #{environment}" })
       run_deploy(version, environment)
