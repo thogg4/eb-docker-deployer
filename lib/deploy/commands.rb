@@ -12,6 +12,8 @@ module Deploy
 
     def create_deploy_zip_file
       shout "Creating deploy.zip"
+      # to create the archive correctly we must set up a fake git user
+      system "git config user.email 'deploy'; git config user.email 'deploy'"
       command = "uploadStash=`git stash create`; git archive -o deploy.zip ${uploadStash:-HEAD}"
       exit(1) unless system(command)
     end
