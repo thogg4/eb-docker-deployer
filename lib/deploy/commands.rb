@@ -10,6 +10,12 @@ module Deploy
       exit(1) unless system(command)
     end
 
+    def create_deploy_zip_file
+      shout "Creating deploy.zip"
+      command = "uploadStash=`git stash create`; git archive -o deploy.zip ${uploadStash:-HEAD}"
+      exit(1) unless system(command)
+    end
+
     def use_tag_in_dockerrun(repo, tag)
       shout "Changing Dockerrun.aws.json to contain latest tag"
       command = "sed 's/<TAG>/#{tag}/' < Dockerrun.aws.json.template > Dockerrun.aws.json"
