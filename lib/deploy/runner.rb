@@ -25,36 +25,16 @@ module Deploy
       create_deploy_zip_file
 
       if build && !version_exists?(version)
-        announce_title = "Deployment started with build"
+        announce_title = "Deployment started with an image that was just built"
         build_image(repo, version)
+        push_image(repo, version)
       else
-        announce_title = "Deployment started without build"
-        pull_image(repo, version)
+        announce_title = "Deployment started with an image that was already built"
       end
-
-      push_image(repo, version)
 
       announce({ color: '#6080C0', title: announce_title, text: "Deploying version #{version} to #{environment}" })
       run_deploy(version, environment)
       announce({ color: 'good', title: 'Deployment Succeeded!!', text: "The current version of #{environment} is #{version}" })
-    end
-
-    method_option :version, aliases: '-v', desc: 'Version', required: true
-    method_option :environment, aliases: '-e', desc: 'Environment', required: true
-    desc 'rollback', 'rollback'
-    def rollback
-      check_setup
-
-      environment = options[:environment]
-      version = options[:version]
-      check_rollback_version(version, environment)
-
-      repo = ENV['DOCKER_REPO']
-
-      announce({ color: '#6080C0', title: "Rollback started", text: "Rolling back to #{version} on #{environment}" })
-
-      run_rollback(version, environment)
-      announce({ color: 'good', title: 'Rollback Succeeded!!', text: "The current version of #{environment} is #{version}" })
     end
 
     desc 'send test notification', 'send test notification'
