@@ -6,9 +6,9 @@ module Deploy
     include Deploy::Versions
     include Deploy::Utility
 
-    method_option :version, aliases: '-v', desc: 'Version', required: true
-    method_option :environment, aliases: '-e', desc: 'Environment', required: true
-    method_option :build, aliases: '-b', desc: 'Build Image', default: true
+    method_option :version, aliases: '-v', desc: 'Version', type: :string, required: true
+    method_option :environment, aliases: '-e', desc: 'Environment', type: :string, required: true
+    method_option :build, aliases: '-b', desc: 'Build Image', type: :boolean, default: true
     desc 'deploy', 'deploy'
     def deploy
       check_setup
