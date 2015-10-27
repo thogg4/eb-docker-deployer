@@ -5,7 +5,7 @@ module Deploy
     include Deploy::Utility
 
     def build_image(repo, tag)
-      if File.can_read? 'Dockerfile.erb'
+      if File.readable? 'Dockerfile.erb'
         shout "Processing Dockerfile.erb with ERB"
         system('erb Dockerfile.erb > Dockerfile') || exit(1)
       end
