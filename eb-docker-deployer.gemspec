@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'deploy/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "eb-docker-deploy"
+  spec.name          = "eb-docker-deployer"
   spec.version       = Deploy::VERSION
   spec.authors       = ["Tim"]
   spec.email         = ["thogg4@gmail.com"]
